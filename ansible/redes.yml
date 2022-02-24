@@ -1,0 +1,166 @@
+---
+
+- name: Provision
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+  - name: Install a list of packages
+    become: true
+    apt:
+      pkg:
+        - wireshark
+        - hping3
+        - iputils-arping
+        - nmap
+        - telnet
+        - socat
+        - tcpdump
+        - tcpflow
+        - thunderbird
+        - swaks
+        - ftp
+        - whois
+        - dnstracer
+        - dnsutils
+        - htop
+        - iperf3
+        - mtr
+        - traceroute
+        - netcat
+        - ncat
+        - wait-for-it
+        - ethtool
+      update_cache: yes
+      install_recommends: no
+
+  - name: Ensure group "redes" exists
+    ansible.builtin.group:
+      name: redes
+      state: present
+
+  - name: Add user redes
+    ansible.builtin.user:
+      name: redes
+      comment: alumno de redes
+      password: "$1$SomeSalt$ez4kOkbWghokv0eobCyQJ0"
+      create_home: true
+      shell: /bin/bash
+      uid: 1000
+      groups: redes,sudo,docker
+
+  - name: Install pip dependencies
+    become: true
+    pip:
+      name: "{{ item }}"
+      executable: pip3
+    loop:
+    - invoke
+    - poetry
+    - grpcio-tools
+
+  - name: Update alternatives ebtables
+    become: true
+    ansible.builtin.shell: update-alternatives --set ebtables /usr/sbin/ebtables-legacy
+
+  - name: OSPF MDR - Git checkout
+    become: true
+    ansible.builtin.git:
+      repo: https://github.com/USNavalResearchLaboratory/ospf-mdr.git
+      dest: /opt/ospf-mdr
+      version: f21688cdcac30fb10b1ebac0063eb24e4583e9b4
+      force: true
+
+  - name: OSPF MDR - Patch
+    become: true
+    lineinfile:
+      dest: /opt/ospf-mdr/lib/built.h
+      state: present
+      regexp: '^const char \*quagga_built_string;'
+      line: 'extern const char *quagga_built_string;'
+
+  - name: OSPF MDR - Bootstraph
+    become: true
+    ansible.builtin.shell: ./bootstrap.sh
+    args:
+      chdir: /opt/ospf-mdr
+
+  - name: OSPF MDR - Configure
+    become: true
+    ansible.builtin.shell: |
+      ./configure \
+        --disable-doc \
+        --enable-user=root \
+        --enable-group=root \
+        --with-cflags=-ggdb \
+        --sysconfdir=/usr/local/etc/quagga \
+        --enable-vtysh \
+        --localstatedir=/var/run/quagga
+    args:
+      chdir: /opt/ospf-mdr
+
+  - name: OSPF MDR - Run make -j2
+    become: true
+    make:
+      chdir: /opt/ospf-mdr
+      params:
+        NUM_THREADS: 2
+
+  - name: OSPF MDR - Run make install
+    become: true
+    make:
+      chdir: /opt/ospf-mdr
+      target: install
+
+  - name: Core - Git checkout
+    become: true
+    ansible.builtin.git:
+      repo: https://github.com/coreemu/core.git
+      dest: /opt/core
+      version: release-8.0.0
+      force: true
+
+  - name: Core - Invoke install
+    ansible.builtin.shell: inv install -i debian
+    args:
+      chdir: /opt/core
+
+  - name: Core - Invoke install
+    become: true
+    file:
+      src: /usr/local/bin/core-gui-legacy
+      dest: /bin/core-gui
+      state: link
+
+  - name: Enable service
+    become: true
+    systemd:
+      name: core-daemon
+      state: started
+      enabled: yes
+      masked: no
+
+  - name: Import gpg keys from pgp.mit.edu
+    become: true
+    shell: "gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys {{ item }}"
+    loop: "{{ lookup('url', 'https://gist.githubusercontent.com/matiferrigno/de7505b2bbf73f1491f5b6e7ba680437/raw/0999b1bf00630d7916ec2f765ba23ee27ca8db55/FINGERPRINT', wantlist=True) }}"
+
+  - name: "Pulling repo"
+    become: true
+    ansible.builtin.git:
+      repo: https://github.com/unlp-redes/servicios-virtual.git
+      dest: /opt/services
+      verify_commit: true
+      clone: true
+      version: main
+
+  - name: setup cron
+    become: true
+    ansible.builtin.cron:
+      name: "services_up"
+      state: present
+      cron_file: services_up
+      user: root
+      minute: "*/5"
+      hour: "*"
+      day: "*"
+      job: "cd /opt/services/ && /usr/bin/git pull -f & /usr/local/bin/docker-compose pull & /usr/local/bin/docker-compose up -d --remove-orphans --renew-anon-volumes"
