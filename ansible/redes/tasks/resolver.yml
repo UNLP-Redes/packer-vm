@@ -1,0 +1,18 @@
+---
+
+- name: RESOLVER - Disable resolv.conf controlled by NM
+  copy:
+    dest: "/etc/NetworkManager/NetworkManager.conf"
+    content: |
+      [main]
+      plugins=ifupdown,keyfile
+      dns=none
+
+      [ifupdown]
+      managed=false
+
+- name: RESOLVER - resolv.conf pointing to virtual service
+  copy:
+    dest: "/etc/resolv.conf"
+    content: |
+      nameserver 172.28.0.29

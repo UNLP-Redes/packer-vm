@@ -21,8 +21,9 @@ build {
 
   provisioner "ansible-local" {
 
-    playbook_file   = "./ansible/redes.yml"
-    clean_staging_directory = false
+    playbook_file   = "./ansible/redes/main.yml"
+    playbook_dir    = "./ansible/"
+    clean_staging_directory = true
     staging_directory = "/tmp/ansible-packer-redes"
   }
 

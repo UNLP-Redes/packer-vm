@@ -1,0 +1,16 @@
+---
+
+- name: GROUP - Add 'redes'
+  ansible.builtin.group:
+    name: redes
+    state: present
+
+- name: USER - Add 'redes'
+  ansible.builtin.user:
+    name: redes
+    comment: alumno de redes
+    password: "$1$SomeSalt$ez4kOkbWghokv0eobCyQJ0"
+    create_home: true
+    shell: /bin/bash
+    uid: 1000
+    groups: redes,sudo,docker,wireshark

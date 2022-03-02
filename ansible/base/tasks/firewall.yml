@@ -1,0 +1,26 @@
+---
+
+- name: UFW - Install
+  apt:
+    name: ufw
+    update_cache: yes
+    install_recommends: no
+
+- name: UFW - allow forwarding
+  lineinfile:
+    dest: /etc/default/ufw
+    state: present
+    regexp: '^DEFAULT_FORWARD_POLICY="DROP"'
+    line: 'DEFAULT_FORWARD_POLICY="ACCEPT"'
+
+- name: UFW - allow incoming
+  community.general.ufw:
+    state: enabled
+    direction: incoming
+    policy: allow
+
+- name: UFW - systemd enabled on boot
+  ansible.builtin.systemd:
+    name: ufw
+    state: started
+    enabled: yes

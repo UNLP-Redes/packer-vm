@@ -1,0 +1,41 @@
+---
+
+- name: SERVICES - Import gpg keys from pgp.mit.edu
+  shell: "gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys {{ item }}"
+  loop: "{{ lookup('url', 'https://gist.githubusercontent.com/matiferrigno/de7505b2bbf73f1491f5b6e7ba680437/raw/0999b1bf00630d7916ec2f765ba23ee27ca8db55/FINGERPRINT', wantlist=True) }}"
+
+- name: SERVICES - First repo pull
+  ansible.builtin.git:
+    repo: https://github.com/unlp-redes/servicios-virtual.git
+    dest: /opt/services
+    verify_commit: true
+    clone: true
+    version: main
+
+- name: SERVICES - First image pull
+  ansible.builtin.shell:
+    cmd: /usr/local/bin/docker-compose pull
+    chdir: /opt/services
+
+- name: SERVICES - First run
+  ansible.builtin.shell:
+    cmd: /usr/local/bin/docker-compose up -d
+    chdir: /opt/services
+
+- name: SERVICES - Set PATH to crontab
+  cron:
+    name: PATH
+    env: yes
+    user: root
+    value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+- name: SERVICES - Setup cron
+  become: true
+  ansible.builtin.cron:
+    name: "services_up"
+    state: present
+    user: root
+    minute: "*/2"
+    hour: "*"
+    day: "*"
+    job: 'bash -c "cd /opt/services/; /usr/bin/git pull -f; /usr/local/bin/docker-compose pull; /usr/local/bin/docker-compose up -d --remove-orphans --renew-anon-volumes"'

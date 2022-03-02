@@ -1,0 +1,28 @@
+---
+
+- name: Provision
+  hosts: 127.0.0.1
+  connection: local
+  become: true
+  tasks:
+
+    - include_tasks: ./base/tasks/apt_install.yml
+    - include_tasks: ./base/tasks/core.yml
+    - include_tasks: ./base/tasks/docker.yml
+    - include_tasks: ./base/tasks/firewall.yml
+    - include_tasks: ./base/tasks/wireshark.yml
+
+    - name: SUDO - Allow passwordless
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: '^%sudo'
+        line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+
+    - name: SSH - Permit Root
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        state: present
+        regexp: '^#PermitRootLogin prohibit-password'
+        line: 'PermitRootLogin yes'

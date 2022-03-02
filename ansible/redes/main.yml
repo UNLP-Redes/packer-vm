@@ -1,0 +1,11 @@
+---
+
+- name: Provision
+  hosts: 127.0.0.1
+  connection: local
+  become: true
+  tasks:
+    - include_tasks: ./redes/tasks/user.yml
+    - include_tasks: ./redes/tasks/services.yml
+    - include_tasks: ./redes/tasks/resolver.yml
+

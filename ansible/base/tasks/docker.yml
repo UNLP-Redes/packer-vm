@@ -1,0 +1,27 @@
+---
+
+- name: APT - Install
+  apt:
+    pkg:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    update_cache: yes
+    install_recommends: no
+
+- name: DOCKER - Install pip dependencies
+  pip:
+    name: "{{ item }}"
+    executable: pip3
+  loop:
+  - docker[tls]==5.0.3
+  - docker-compose==1.29.2
+
+- name: DOCKER - Configure Docker daemon
+  copy:
+    content: |
+      {
+        "dns": ["8.8.8.8", "1.1.1.1"]
+      }
+    dest: /etc/docker/daemon.json
+    mode: 0644

@@ -81,7 +81,8 @@ variable "timezone" {
 source "virtualbox-iso" "catedra-base" {
   vm_name              = "Debian-Catedra-Base"
   guest_os_type        = "Debian_64"
-  iso_url              = "./iso/debian-11.2.0-amd64-netinst.iso"
+  iso_url              = "https://cdimage.debian.org/debian-cd/11.2.0/amd64/iso-cd/debian-11.2.0-amd64-netinst.iso"
+  #iso_url              = "./iso/debian-11.2.0-amd64-netinst.iso"
   iso_checksum         = "sha256:45c9feabba213bdc6d72e7469de71ea5aeff73faea6bfb109ab5bad37c3b43bd"
   shutdown_command     = "echo 'packer'|sudo -S shutdown -P now"
   boot_command = [
@@ -140,8 +141,9 @@ build {
   }
   provisioner "ansible-local" {
 
-    playbook_file   = "./ansible/base.yml"
-    clean_staging_directory = false
+    playbook_file   = "./ansible/base/main.yml"
+    playbook_dir    = "./ansible/"
+    clean_staging_directory = true
     staging_directory = "/tmp/ansible-packer"
   }
 
