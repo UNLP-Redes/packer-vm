@@ -38,4 +38,4 @@
     minute: "*/2"
     hour: "*"
     day: "*"
-    job: 'bash -c "cd /opt/services/; /usr/bin/git pull -f; /usr/local/bin/docker-compose pull; /usr/local/bin/docker-compose up -d --remove-orphans --renew-anon-volumes"'
+    job: 'bash -c "cd /opt/services/; /usr/bin/git pull -f; /usr/local/bin/docker-compose pull; /usr/local/bin/docker-compose up -d --remove-orphans"'
