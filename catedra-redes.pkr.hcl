@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     virtualbox = {
-      version = ">= 0.0.1"
+      version = ">= 1.0.4"
       source = "github.com/hashicorp/virtualbox"
     }
   }
@@ -9,7 +9,7 @@ packer {
 
 source "virtualbox-ovf" "catedra-redes" {
   source_path  = "output-catedra-base/Debian-Catedra-Base.ovf"
-  vm_name      = "Redes y Comunicaciones v22.1"
+  vm_name      = "Redes y Comunicaciones v22.2"
   ssh_username = "root"
   ssh_password = "packer"
   shutdown_command = "echo 'packer'|sudo -S shutdown -P now"

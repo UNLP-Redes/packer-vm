@@ -1,15 +1,39 @@
 packer {
   required_plugins {
     virtualbox = {
-      version = ">= 0.0.1"
+      version = ">= 1.0.4"
       source = "github.com/hashicorp/virtualbox"
     }
   }
 }
 
-variable "boot_wait" {
-  type    = string
-  default = "5s"
+
+locals {
+  vm_name   = "Debian-Catedra-Base"
+  vm_domain = "redes.unlp.edu.ar"
+  boot_wait = "5s"
+  root_password = "packer"
+  ssh_username  = "root"
+  ssh_password  = local.root_password
+  ssh_port      = 22
+  ssh_timeout   = "60m"
+  memory    = 2048
+  cpus      = 2
+  disk_size = "15G"
+  iso_file  = "./iso/debian-11.4.0-amd64-netinst.iso"
+  iso_checksum = "sha256:d490a35d36030592839f24e468a5b818c919943967012037d6ab3d65d030ef7f"
+  preseed_file = "preseed.cfg"
+  shutdown_cmd = "echo 'packer'|sudo -S shutdown -P now"
+  system_clock_in_utc = true
+  country  = "AR"
+  keyboard = "es"
+  locale   = "en_AR.UTF-8"
+  language = "en"
+  mirror   = "deb.debian.org"
+  timezone = "America/Argentina/Buenos_Aires"
+  boot_cmd = [
+    "<esc><wait>auto preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<enter>"
+  ]
 }
 
 variable "ssh_key" {
@@ -17,87 +41,25 @@ variable "ssh_key" {
   default = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDRvPrOkNMLPBT8KZWPyXX+VwF+y4yaA3xgzFFOoMx2KhLdMwQhMd7Irg96hqc8rKYvFpiPM7MhTSZtH83KlAA9di1kHgxi/X7qTJI447kVtsEiWpiipF6Ffu6Ej8D6GXGe4vz019WsATVcle8pWVeOw+ztFGkLgSwLEuskWPvPOmZrS4WfivyeCfChXHhDvdsxZ0bHzKWMlk2S/Xb9w8GrOrhvM7uTt7tZj4ln20XFVDfK/XBRH2tk2OfROT0aHVV5moohe5Go5gxGE+UrnTTD0a3/Am3jfOc1jqEBg8WB4tpjAQ74avJm5fSYOYUzq4ZyVpCgm/hRyiynYQDgb/QeuqUEElmqxCZmMas6PVNUa9fTksI2Ta0x05CBRc1iuYqUY8PQem+JC/HBYexFIg/sQ+xa8F19Y4W8NKGQvhal8/tfjFY1IuBy0ezMBO2vmQsd5c5UujKjE023JVOumSwiWDLCOy45cE4644Hs7sy23pM1PKs7wkHdsfd17Im4mJPNvePUfANpfKBkt7op5pBHACn+69xiLr1IBDQ04o93B2nEAEsKudY89QBjYrj31HELjx8bNL5qDnJiVZhc/TqzOgg67VulxhJultwCNqimZ/IsI7NOVyomn7lIYBgUJy4dM0ipYnKkUfqhhhR49PyNlsvFtB2SC6JiU0lOcUIuow== mati@centuripe"
 }
 
-variable "root_password" {
-  type = string
-  default = "packer"
-  sensitive = true
-}
-
-variable "vm_name" {
-  type    = string
-  default = "debian-11.2.0-amd64"
-}
-
-variable "vm_domain" {
-  type    = string
-  default = "redes.unlp.edu.ar"
-}
-
-variable "iso_file" {
-  type    = string
-  default = "./iso/debian-11.2.0-amd64-netinst.iso"
-}
-
-variable "preseed_file" {
-  type    = string
-  default = "preseed.cfg"
-}
-
-variable "system_clock_in_utc" {
-  type    = string
-  default = "true"
-}
-
-variable "country" {
-  type    = string
-  default = "AR"
-}
-
-variable "keyboard" {
-  type    = string
-  default = "es"
-}
-
-variable "locale" {
-  type    = string
-  default = "en_AR.UTF-8"
-}
-
-variable "language" {
-  type    = string
-  default = "en"
-}
-
-variable "mirror" {
-  type    = string
-  default = "deb.debian.org"
-}
-
-variable "timezone" {
-  type    = string
-  default = "America/Argentina/Buenos_Aires"
-}
 
 source "virtualbox-iso" "catedra-base" {
-  vm_name              = "Debian-Catedra-Base"
+  vm_name              = local.vm_name
   guest_os_type        = "Debian_64"
-  iso_url              = "https://cdimage.debian.org/debian-cd/11.2.0/amd64/iso-cd/debian-11.2.0-amd64-netinst.iso"
-  #iso_url              = "./iso/debian-11.2.0-amd64-netinst.iso"
-  iso_checksum         = "sha256:45c9feabba213bdc6d72e7469de71ea5aeff73faea6bfb109ab5bad37c3b43bd"
-  shutdown_command     = "echo 'packer'|sudo -S shutdown -P now"
-  boot_command = [
-    "<esc><wait>auto preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<enter>"
-  ]
-  boot_wait            = var.boot_wait
-  memory               = 2048
-  cpus                 = 2
+  iso_url              = local.iso_file
+  iso_checksum         = local.iso_checksum
+  shutdown_command     = local.shutdown_cmd
+  boot_command         = local.boot_cmd
+  boot_wait            = local.boot_wait
+
 
   guest_additions_mode  = "upload"
+  memory    = local.memory
+  cpus      = local.cpus
 
-  ssh_password = var.root_password
-  ssh_username = "root"
-  ssh_port     = 22
-  ssh_timeout  = "60m"
+  ssh_username = local.ssh_username
+  ssh_password = local.ssh_password
+  ssh_port     = local.ssh_port
+  ssh_timeout  = local.ssh_timeout
 
   vboxmanage = [
     ["modifyvm", "{{.Name}}", "--graphicscontroller", "vmsvga"],
@@ -109,16 +71,16 @@ source "virtualbox-iso" "catedra-base" {
 
   http_content = {
       "/preseed.cfg" = templatefile("preseed.pkrtpl", {
-        language = var.language,
-        country = var.country,
-        timezone = var.timezone,
-        locale = var.locale,
-        keyboard = var.keyboard,
-        vm_name = var.vm_name,
-        vm_domain = var.vm_domain,
-        mirror = var.mirror,
-        system_clock_in_utc = var.system_clock_in_utc,
-        ssh_password = var.root_password,
+        language = local.language,
+        country = local.country,
+        timezone = local.timezone,
+        locale = local.locale,
+        keyboard = local.keyboard,
+        vm_name = local.vm_name,
+        vm_domain = local.vm_domain,
+        mirror = local.mirror,
+        system_clock_in_utc = local.system_clock_in_utc,
+        ssh_password = local.root_password,
         ssh_key = var.ssh_key
       }),
   }
@@ -126,7 +88,10 @@ source "virtualbox-iso" "catedra-base" {
 
 build {
 
-  sources = ["source.virtualbox-iso.catedra-base"]
+  sources = [
+    "source.virtualbox-iso.catedra-base",
+  ]
+
   provisioner "shell" {
     inline = [
       "sleep 30",
